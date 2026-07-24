@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Helixo V2 K210 - AI Helmet Detection Model Testing Interface">
+    <title>Helixo V2 K210 — Model Tester (Batch)</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Extra styles for batch processing */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            max-height: 75vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .results-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .results-container::-webkit-scrollbar-track {
+            background: var(--bg-glass);
+            border-radius: 10px;
+        }
+        .results-container::-webkit-scrollbar-thumb {
+            background: var(--border-hover);
+            border-radius: 10px;
+        }
+        .file-count-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--accent-blue-glow);
+            color: var(--accent-blue);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+        .filename-banner {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            word-break: break-all;
+        }
+        #loadingOverlay {
+            border-radius: var(--radius-sm);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header" style="padding-bottom: 10px;">
+        <div class="header-badge">
+            <span class="dot"></span>
+            YOLOv8-nano • Object Detection
+        </div>
+        <h1>Helixo <span>V2 K210</span></h1>
+        <p>Batch Image Testing (Multiple Upload Supported)</p>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="grid">
+            <!-- LEFT: Input Section -->
+            <div>
+                <div class="card">
+                    <div class="card-title">
+                        <span class="icon">📷</span> Input Images
+                    </div>
+
+                    <!-- Upload Zone -->
+                    <div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">🖼️</div>
+                        <h3 id="uploadTitle">Drop images here or click to upload</h3>
+                        <p>Supports JPG, PNG, WEBP <strong style="color:var(--accent-blue)">(Select multiple files)</strong></p>
+                        <div id="fileCountBadge" class="file-count-badge" style="display: none;"></div>
+                        <!-- IMPORTANT: "multiple" attribute added here -->
+                        <input type="file" id="fileInput" accept="image/*" multiple>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="btn-group">
+                        <button id="btnDetect" class="btn btn-primary" disabled onclick="runDetection()">
+                            🔍 Detect All
+                        </button>
+                        <button id="btnWebcam" class="btn btn-webcam" onclick="toggleWebcam()">
+                            📹 Webcam
+                        </button>
+                    </div>
+
+                    <div style="position: relative; margin-top: 16px;">
+                        <div id="loadingOverlay" class="loading-overlay">
+                            <div class="spinner"></div>
+                            <span id="loadingText" class="loading-text">Running YOLOv8 inference...</span>
+                        </div>
+                    </div>
+
+                    <!-- Webcam -->
+                    <div id="webcamContainer" class="webcam-container">
+                        <video id="webcamVideo" autoplay playsinline></video>
+                        <div class="webcam-controls">
+                            <button class="btn btn-primary" onclick="captureWebcam()" style="flex:1">
+                                📸 Capture & Detect
+                            </button>
+                            <button class="btn btn-secondary" onclick="toggleWebcam()" style="flex:0.5">
+                                ✕ Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Results Section -->
+            <div>
+                <!-- Placeholder when no results -->
+                <div id="placeholderCard" class="card" style="text-align: center; padding: 60px 24px;">
+                    <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;">🪖</div>
+                    <h3 style="color: var(--text-secondary); font-weight: 500;">Upload images to test</h3>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">
+                        You can select multiple files at once.<br>
+                        Scroll here to view all results in a list.
+                    </p>
+                </div>
+
+                <!-- Container for dynamic multiple results -->
+                <div id="resultsContainer" class="results-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadTitle = document.getElementById('uploadTitle');
+        const fileCountBadge = document.getElementById('fileCountBadge');
+        const btnDetect = document.getElementById('btnDetect');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const placeholderCard = document.getElementById('placeholderCard');
+        const webcamContainer = document.getElementById('webcamContainer');
+        const webcamVideo = document.getElementById('webcamVideo');
+
+        let currentFiles = [];
+        let webcamStream = null;
+
+        // ─── Drag & Drop ──────────────────────────────────
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFiles(fileInput.files);
+            }
+        });
+
+        function handleFiles(files) {
+            currentFiles = Array.from(files);
+            
+            uploadTitle.textContent = "Images Ready";
+            fileCountBadge.textContent = currentFiles.length + (currentFiles.length === 1 ? " image selected" : " images selected");
+            fileCountBadge.style.display = "inline-block";
+            
+            btnDetect.disabled = false;
+            
+            if (webcamStream) toggleWebcam();
+        }
+
+        // ─── Detection ────────────────────────────────────
+        async function runDetection() {
+            if (currentFiles.length === 0) return;
+
+            // Setup loading UI
+            loadingOverlay.classList.add('active');
+            loadingOverlay.style.position = 'absolute';
+            loadingOverlay.style.height = '120px'; // Give it some space since we removed the main image preview here
+            btnDetect.disabled = true;
+            placeholderCard.style.display = 'none';
+            resultsContainer.innerHTML = ''; // clear old results
+
+            // Process sequentially so we don't overload the Flask dev server
+            for (let i = 0; i < currentFiles.length; i++) {
+                const file = currentFiles[i];
+                loadingText.textContent = `Processing image ${i + 1} of ${currentFiles.length}...`;
+                
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    const data = await response.json();
+
+                    if (data.error) {
+                        appendErrorCard(file.name, data.error);
+                    } else {
+                        appendResultCard(file.name, data);
+                    }
+                } catch (err) {
+                    appendErrorCard(file.name, err.message);
+                }
+            }
+
+            loadingOverlay.classList.remove('active');
+            btnDetect.disabled = false;
+            loadingText.textContent = "Running YOLOv8 inference...";
+        }
+
+        function appendErrorCard(filename, errorMsg) {
+            const card = document.createElement('div');
+            card.className = 'card result-card active';
+            card.style.display = 'block';
+            card.innerHTML = `
+                <div class="filename-banner">📄 ${filename}</div>
+                <div class="status-banner active red">❌ Error: ${errorMsg}</div>
+            `;
+            resultsContainer.appendChild(card);
+        }
+
+        function appendResultCard(filename, data) {
+            const card = document.createElement('div');
+            card.className = 'card result-card active';
+            card.style.display = 'block';
+            
+            const helmetCount = data.detections.filter(d => d.class === 'helmet').length;
+            const noHelmetCount = data.detections.filter(d => d.class === 'no_helmet').length;
+
+            let detectionListHTML = '';
+            if (data.detection_count === 0) {
+                detectionListHTML = `
+                    <li class="detection-item">
+                        <span class="class-name">
+                            <span class="class-dot" style="background: var(--accent-yellow)"></span>
+                            ⚠️ No objects detected
+                        </span>
+                        <span class="confidence medium">0%</span>
+                    </li>
+                `;
+            } else {
+                data.detections.forEach((det) => {
+                    const confClass = det.confidence >= 80 ? 'high' : det.confidence >= 50 ? 'medium' : 'low';
+                    const emoji = det.class === 'helmet' ? '🪖' : '⛑️';
+                    detectionListHTML += `
+                        <li class="detection-item">
+                            <span class="class-name">
+                                <span class="class-dot ${det.class}"></span>
+                                ${emoji} ${det.class.replace('_', ' ')}
+                            </span>
+                            <span class="confidence ${confClass}">${det.confidence}%</span>
+                        </li>
+                    `;
+                });
+            }
+
+            card.innerHTML = `
+                <div class="filename-banner">📄 ${filename}</div>
+                <div class="status-banner active ${data.summary_color}" style="display:block;">${data.summary_text}</div>
+                
+                <img class="result-image" src="data:image/jpeg;base64,${data.annotated_image}" alt="Result">
+                
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-value">${data.detection_count}</div>
+                        <div class="stat-label">Detections</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" style="color: var(--accent-green)">${helmetCount}</div>
+                        <div class="stat-label">Helmet</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" style="color: var(--accent-red)">${noHelmetCount}</div>
+                        <div class="stat-label">No Helmet</div>
+                    </div>
+                </div>
+                
+                <ul class="detection-list">
+                    ${detectionListHTML}
+                </ul>
+            `;
+            
+            resultsContainer.appendChild(card);
+        }
+
+        // ─── Webcam ───────────────────────────────────────
+        async function toggleWebcam() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(t => t.stop());
+                webcamStream = null;
+                webcamContainer.classList.remove('active');
+                webcamVideo.srcObject = null;
+                return;
+            }
+
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 }
+                });
+                webcamVideo.srcObject = webcamStream;
+                webcamContainer.classList.add('active');
+            } catch (err) {
+                alert('Webcam access denied: ' + err.message);
+            }
+        }
+
+        async function captureWebcam() {
+            if (!webcamStream) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = webcamVideo.videoWidth;
+            canvas.height = webcamVideo.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcamVideo, 0, 0);
+
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'webcam_capture.jpg', { type: 'image/jpeg' });
+                handleFiles([file]); 
+                await runDetection();
+            }, 'image/jpeg', 0.9);
+        }
+    </script>
+</body>
+</html>

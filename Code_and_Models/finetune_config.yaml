@@ -1,0 +1,7 @@
+path: /Users/arohanjan/Desktop/pythonc_language copy 3/helixo_v2_k210/dataset_personal
+train: images
+val: images
+
+names:
+  0: helmet
+  1: no_helmet

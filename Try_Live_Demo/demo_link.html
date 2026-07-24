@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Helixo AI - Live Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: 1px solid rgba(99, 179, 237, 0.3);
+    border-radius: 24px;
+    padding: 60px 50px;
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(99, 179, 237, 0.15);
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(72, 187, 120, 0.2);
+    border: 1px solid #48bb78;
+    color: #48bb78;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 42px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #63b3ed, #76e4f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: #a0aec0;
+    font-size: 15px;
+    margin-bottom: 40px;
+    line-height: 1.6;
+  }
+  .demo-box {
+    background: rgba(99, 179, 237, 0.08);
+    border: 2px dashed rgba(99, 179, 237, 0.4);
+    border-radius: 16px;
+    padding: 40px 30px;
+    margin-bottom: 36px;
+  }
+  .demo-box p {
+    color: #90cdf4;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.8;
+  }
+  .demo-box p strong { color: #fff; }
+  .btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 18px 48px;
+    border-radius: 50px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 8px 30px rgba(49, 130, 206, 0.5);
+    transition: all 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(49, 130, 206, 0.7); }
+  .url-text {
+    font-size: 13px;
+    color: #718096;
+    margin-top: 16px;
+    word-break: break-all;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 36px;
+  }
+  .stat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px 12px;
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #68d391, #48bb78);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #718096;
+    margin-top: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .ssip {
+    margin-top: 36px;
+    background: linear-gradient(135deg, rgba(237,137,54,0.15), rgba(237,100,54,0.1));
+    border: 1px solid rgba(237,137,54,0.4);
+    border-radius: 12px;
+    padding: 18px 24px;
+    font-size: 13px;
+    color: #fbd38d;
+    line-height: 1.6;
+  }
+  .ssip strong { color: #f6ad55; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">✅ Live & Working</div>
+  <h1>Helixo AI</h1>
+  <p class="subtitle">
+    Real-Time Helmet Detection · Edge Computing · YOLOv8-nano<br>
+    Custom Trained Model — 15+ Hours Training · 12,198 Images
+  </p>
+
+  <div class="demo-box">
+    <p>
+      Our <strong>custom trained YOLOv8-nano model</strong> runs directly in your browser.<br>
+      No installation needed. Open your webcam, show a helmet or your bare head,<br>
+      and the AI will detect it in real-time — <strong>fully offline</strong> using ONNX Runtime Web.
+    </p>
+    <a href="https://imaginative-kitsune-6e83b9.netlify.app/" class="btn">
+      🚀 Try Live Demo
+    </a>
+    <p class="url-text">https://imaginative-kitsune-6e83b9.netlify.app/</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">99.87%</div>
+      <div class="stat-label">Precision</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">97.50%</div>
+      <div class="stat-label">mAP@50</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">115</div>
+      <div class="stat-label">Epochs</div>
+    </div>
+  </div>
+
+  <div class="ssip">
+    🏆 <strong>SSIP Achievement — ₹16,000 Grant Awarded</strong><br>
+    This project was recognized and awarded a seed grant of ₹16,000 by the
+    Student Startup and Innovation Policy (SSIP), Gujarat Government,
+    for its innovation in AI-based vehicular safety.
+  </div>
+</div>
+</body>
+</html>
