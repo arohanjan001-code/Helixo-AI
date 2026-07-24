@@ -18,7 +18,7 @@ The trained model files. Two formats — .pt for Python/PyTorch and .onnx for th
 All the code — the web frontend, Flask backend, ESP32/K210 firmware in C, training scripts, and export scripts.
 
 **Training_Results/**
-Actual graphs generated during training — loss curves, confusion matrix, F1 curve, PR curve, and sample predictions. Training took 15+ hours on my MacBook.
+Actual graphs generated during training — loss curves, confusion matrix, F1 curve, PR curve, and sample predictions. Training took 15+ hours on my laptop.
 
 **Documentation/**
 Project presentation slides.
